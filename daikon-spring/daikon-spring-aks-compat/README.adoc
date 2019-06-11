@@ -1,0 +1,24 @@
+= Daikon Spring - AKS Compatibility
+:toc:
+
+This module provides a set of auto configuration that allows use of AWS cloud... in an Azure context.
+Audience for this module is primarily applications that need to run on AWS and Azure, using same service image.
+
+== Usage
+
+Add dependency to `daikon-spring-aks-compat` in the application module:
+```xml
+<dependency>
+	<groupId>org.talend.daikon</groupId>
+	<artifactId>daikon-spring-aks-compat</artifactId>
+	<version>LATEST</version>
+</dependency>
+```
+
+To turn on Azure compatibility, add the following property to your application configuration:
+```properties
+talend.aks.compatibility=true
+```
+
+NOTE: It is important to note any Spring configuration can be externally configured (using `TALEND_AKS_COMPATIBILITY=true` in environment values). This allows only deployment code to configure AKS compatibility mode (no profile nor application context properties).
+

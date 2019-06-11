@@ -1,0 +1,2 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+org.talend.spring.aks.compat.AKSCompatibilityConfiguration
