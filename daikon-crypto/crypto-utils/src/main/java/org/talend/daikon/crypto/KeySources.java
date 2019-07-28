@@ -161,16 +161,17 @@ public class KeySources {
     public static KeySource file(String fileName, KeySource defaultKeySource) {
         return () -> {
             final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-            final InputStream resource = classLoader.getResourceAsStream(fileName);
-            if (resource == null) {
-                try (FileOutputStream fos = new FileOutputStream(fileName)) {
+            try (final InputStream resource = classLoader.getResourceAsStream(fileName)) {
+                if (resource == null) {
                     final byte[] key = defaultKeySource.getKey();
-                    fos.write(key);
-                    fos.flush();
+                    try (FileOutputStream fos = new FileOutputStream(fileName)) {
+                        fos.write(key);
+                        fos.flush();
+                    }
                     return key;
+                } else {
+                    return IOUtils.toByteArray(resource);
                 }
-            } else {
-                return IOUtils.toByteArray(resource);
             }
         };
     }

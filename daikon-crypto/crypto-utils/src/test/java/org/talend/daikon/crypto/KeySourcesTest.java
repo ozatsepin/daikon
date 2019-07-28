@@ -60,7 +60,6 @@ public class KeySourcesTest {
         final KeySource random = KeySources.random(16);
         final KeySource fileKeySource = KeySources.file("content_not_exist.key", random);
         assertArrayEquals(random.getKey(), fileKeySource.getKey());
-
         assertNotNull(Thread.currentThread().getContextClassLoader().getResource("content_not_exist.key"));
 
         assertSource(fileKeySource);
