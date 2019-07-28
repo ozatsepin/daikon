@@ -1,5 +1,7 @@
 package org.talend.daikon.crypto;
 
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.net.NetworkInterface;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -10,6 +12,8 @@ import java.util.Optional;
 
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
+
+import org.apache.commons.io.IOUtils;
 
 /**
  * A collection of {@link KeySource} helpers to ease use of {@link Encryption}.
@@ -137,6 +141,36 @@ public class KeySources {
                 return factory.generateSecret(spec).getEncoded();
             } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
                 throw new IllegalStateException("Unable to generate key.", e);
+            }
+        };
+    }
+
+    /**
+     * Builds a {@link KeySource} that reads from the given <code>fileName</code>.
+     * <ul>
+     * <li>File is looked up using current thread's classloader (and using
+     * {@link ClassLoader#getResourceAsStream(String)}.</li>
+     * <li>If <code>fileName</code> is not found, a file is created and contains a default key (generated using
+     * <code>defaultKeySource</code> parameter</li>
+     * </ul>
+     * 
+     * @param fileName The file name that contains a key.
+     * @param defaultKeySource A {@link KeySource} to use if file name cannot bbe found.
+     * @return A {@link KeySource} that reads key from file or silently generate a file name for next reads.
+     */
+    public static KeySource file(String fileName, KeySource defaultKeySource) {
+        return () -> {
+            final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+            final InputStream resource = classLoader.getResourceAsStream(fileName);
+            if (resource == null) {
+                try (FileOutputStream fos = new FileOutputStream(fileName)) {
+                    final byte[] key = defaultKeySource.getKey();
+                    fos.write(key);
+                    fos.flush();
+                    return key;
+                }
+            } else {
+                return IOUtils.toByteArray(resource);
             }
         };
     }

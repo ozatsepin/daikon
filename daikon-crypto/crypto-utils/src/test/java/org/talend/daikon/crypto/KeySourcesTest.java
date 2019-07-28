@@ -37,7 +37,7 @@ public class KeySourcesTest {
         assertSource(KeySources.systemProperty("missingSystemProperty"));
     }
 
-    @Test()
+    @Test
     public void shouldGenerateFromSystemProperty() throws Exception {
         try {
             System.setProperty("aes.encryption.key", "DataPrepIsSoCool");
@@ -45,6 +45,25 @@ public class KeySourcesTest {
         } finally {
             System.clearProperty("aes.encryption.key");
         }
+    }
+
+    @Test
+    public void shouldReadFromExistingFile() throws Exception {
+        final KeySource fileKeySource = KeySources.file("content.key", KeySources.random(16));
+        assertArrayEquals("abcdefgh12345678".getBytes(), fileKeySource.getKey());
+
+        assertSource(fileKeySource);
+    }
+
+    @Test
+    public void shouldCreateNewFile() throws Exception {
+        final KeySource random = KeySources.random(16);
+        final KeySource fileKeySource = KeySources.file("content_not_exist.key", random);
+        assertArrayEquals(random.getKey(), fileKeySource.getKey());
+
+        assertNotNull(Thread.currentThread().getContextClassLoader().getResource("content_not_exist.key"));
+
+        assertSource(fileKeySource);
     }
 
     private void assertSource(KeySource keySource) throws Exception {
