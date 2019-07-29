@@ -155,10 +155,14 @@ public class KeySources {
      * </ul>
      * 
      * @param fileName The file name that contains a key.
-     * @param defaultKeySource A {@link KeySource} to use if file name cannot be found.
+     * @param defaultKeySource A non-null {@link KeySource} to use if file name cannot be found.
      * @return A {@link KeySource} that reads key from file or silently generate a file name for next reads.
+     * @throws IllegalArgumentException if <code>defaultKeySource</code> is null.
      */
     public static KeySource file(String fileName, KeySource defaultKeySource) {
+        if (defaultKeySource == null) {
+            throw new IllegalArgumentException("Default key source cannot be null.");
+        }
         return () -> {
             final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
             try (final InputStream resource = classLoader.getResourceAsStream(fileName)) {

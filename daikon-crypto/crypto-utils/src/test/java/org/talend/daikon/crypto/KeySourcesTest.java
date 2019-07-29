@@ -47,6 +47,11 @@ public class KeySourcesTest {
         }
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void shouldThrowExceptionWhenDefaultKeySourceIsNull() {
+        KeySources.file("content.key", null);
+    }
+
     @Test
     public void shouldReadFromExistingFile() throws Exception {
         final KeySource fileKeySource = KeySources.file("content.key", KeySources.random(16));
