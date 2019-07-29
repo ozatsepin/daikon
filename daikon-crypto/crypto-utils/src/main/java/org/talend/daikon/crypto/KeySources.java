@@ -155,7 +155,7 @@ public class KeySources {
      * </ul>
      * 
      * @param fileName The file name that contains a key.
-     * @param defaultKeySource A {@link KeySource} to use if file name cannot bbe found.
+     * @param defaultKeySource A {@link KeySource} to use if file name cannot be found.
      * @return A {@link KeySource} that reads key from file or silently generate a file name for next reads.
      */
     public static KeySource file(String fileName, KeySource defaultKeySource) {
