@@ -39,7 +39,10 @@ public enum AuditConfiguration {
     APPENDER_HTTP_CONNECT_TIMEOUT(Integer.class, 30000),
     APPENDER_HTTP_READ_TIMEOUT(Integer.class, 60000),
     PROPAGATE_APPENDER_EXCEPTIONS(PropagateExceptions.class, PropagateExceptions.NONE),
-    BACKEND(Backends.class, Backends.AUTO);
+    BACKEND(Backends.class, Backends.AUTO),
+    KAFKA_BOOTSTRAP_SERVERS(String.class, ""),
+    KAFKA_TOPIC(String.class, ""),
+    KAFKA_PARTITION_KEY_NAME(String.class, "");
 
     private static final String PLACEHOLDER_START = "${";
 
