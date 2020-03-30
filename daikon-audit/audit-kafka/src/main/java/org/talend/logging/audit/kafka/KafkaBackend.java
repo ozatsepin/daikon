@@ -26,16 +26,32 @@ public class KafkaBackend extends AbstractBackend {
 
     private final String partitionKeyName;
 
+    private final String bootstrapServers;
+
+    private final Integer kafkaSendTimeoutSeconds;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public KafkaBackend(AuditConfigurationMap config) {
         super(null);
         StringSerializer keyValueSerializer = new StringSerializer();
+        this.bootstrapServers = config.getString(AuditConfiguration.KAFKA_BOOTSTRAP_SERVERS);
         Map<String, Object> producerConfig = new HashMap<>();
-        producerConfig.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, config.getString(AuditConfiguration.KAFKA_BOOTSTRAP_SERVERS));
+        producerConfig.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         this.kafkaProducer = new KafkaProducer<>(producerConfig, keyValueSerializer, keyValueSerializer);
         this.kafkaTopic = config.getString(AuditConfiguration.KAFKA_TOPIC);
         this.partitionKeyName = config.getString(AuditConfiguration.KAFKA_PARTITION_KEY_NAME);
+        this.kafkaSendTimeoutSeconds = config.getInteger(AuditConfiguration.KAFKA_SEND_TIMEOUT_SECONDS);
+    }
+
+    public KafkaBackend(KafkaProducer<String, String> kafkaProducer, String kafkaTopic, String partitionKeyName,
+            String bootstrapServers, Integer kafkaSendTimeoutSeconds) {
+        super(null);
+        this.kafkaProducer = kafkaProducer;
+        this.kafkaTopic = kafkaTopic;
+        this.partitionKeyName = partitionKeyName;
+        this.bootstrapServers = bootstrapServers;
+        this.kafkaSendTimeoutSeconds = kafkaSendTimeoutSeconds;
     }
 
     @Override
@@ -48,7 +64,7 @@ public class KafkaBackend extends AbstractBackend {
     }
 
     private ProducerRecord<String, String> createRecordFromContext(Map<String, String> context) {
-        String key = context.getOrDefault(this.partitionKeyName, null);
+        String key = context != null ? context.getOrDefault(this.partitionKeyName, null) : null;
         String value;
         try {
             value = this.objectMapper.writeValueAsString(context);
@@ -66,5 +82,21 @@ public class KafkaBackend extends AbstractBackend {
     @Override
     public void setContextMap(Map<String, String> newContext) {
         MDC.setContextMap(newContext);
+    }
+
+    String getKafkaTopic() {
+        return kafkaTopic;
+    }
+
+    String getPartitionKeyName() {
+        return partitionKeyName;
+    }
+
+    String getBootstrapServers() {
+        return bootstrapServers;
+    }
+
+    Integer getKafkaSendTimeoutSeconds() {
+        return kafkaSendTimeoutSeconds;
     }
 }
