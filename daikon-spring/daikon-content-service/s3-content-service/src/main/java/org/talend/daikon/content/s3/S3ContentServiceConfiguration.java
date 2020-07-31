@@ -34,15 +34,19 @@ public class S3ContentServiceConfiguration {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(S3ContentServiceConfiguration.class);
 
-    private static final String EC2_AUTHENTICATION = "EC2";
+    public static final String EC2_AUTHENTICATION = "EC2";
 
-    private static final String TOKEN_AUTHENTICATION = "TOKEN";
+    public static final String TOKEN_AUTHENTICATION = "TOKEN";
 
-    private static final String CUSTOM_AUTHENTICATION = "CUSTOM";
+    public static final String CUSTOM_AUTHENTICATION = "CUSTOM";
 
-    private static final String MINIO_AUTHENTICATION = "MINIO";
+    public static final String MINIO_AUTHENTICATION = "MINIO";
 
-    static final String S3_ENDPOINT_URL = "content-service.store.s3.endpoint_url";
+    public static final String S3_ENDPOINT_URL = "content-service.store.s3.endpoint_url";
+
+    public static final String S3_ENABLE_PATH_STYLE = "content-service.store.s3.enable_path_style";
+
+    public static final String CONTENT_SERVICE_STORE_AUTHENTICATION = "content-service.store.s3.authentication";
 
     private static AmazonS3ClientBuilder configureEC2Authentication(AmazonS3ClientBuilder builder) {
         LOGGER.info("Using EC2 authentication");
@@ -64,22 +68,24 @@ public class S3ContentServiceConfiguration {
     @Bean
     public AmazonS3 amazonS3(Environment environment, ApplicationContext applicationContext) {
         // Configure authentication
-        final String authentication = environment.getProperty("content-service.store.s3.authentication", EC2_AUTHENTICATION)
+        final String authentication = environment.getProperty(CONTENT_SERVICE_STORE_AUTHENTICATION, EC2_AUTHENTICATION)
                 .toUpperCase();
         AmazonS3ClientBuilder builder = AmazonS3ClientBuilder.standard();
         switch (authentication) {
         case EC2_AUTHENTICATION:
             builder = configureEC2Authentication(builder);
+            builder = configurePathStyleAccess(environment, builder, false);
             break;
         case TOKEN_AUTHENTICATION:
             builder = configureTokenAuthentication(environment, builder);
+            builder = configurePathStyleAccess(environment, builder, false);
             break;
         case MINIO_AUTHENTICATION:
             // Nothing to do to standard builder, but check "content-service.store.s3.endpoint_url" is set.
             if (!environment.containsProperty(S3_ENDPOINT_URL)) {
                 throw new InvalidConfiguration("Missing '" + S3_ENDPOINT_URL + "' configuration");
             }
-            builder = AmazonS3ClientBuilder.standard();
+            builder = configurePathStyleAccess(environment, builder, true);
             break;
         case CUSTOM_AUTHENTICATION:
             try {
@@ -108,13 +114,20 @@ public class S3ContentServiceConfiguration {
         return builder.build();
     }
 
+    private static AmazonS3ClientBuilder configurePathStyleAccess(Environment environment, AmazonS3ClientBuilder builder,
+            boolean defaultValue) {
+        final boolean enablePathStyle = environment.getProperty(S3_ENABLE_PATH_STYLE, Boolean.class, defaultValue);
+        builder = builder.withPathStyleAccessEnabled(enablePathStyle);
+        return builder;
+    }
+
     @Bean
     public ResourceResolver s3PathResolver(AmazonS3 amazonS3, Environment environment, ApplicationContext applicationContext,
             PathMatchingSimpleStorageResourcePatternResolver resolver) {
         if (isMultiTenancyEnabled(environment)) {
             try {
                 final S3BucketProvider s3BucketProvider = applicationContext.getBean(S3BucketProvider.class);
-                return new S3ResourceResolver(resolver, amazonS3, s3BucketProvider);
+                return new S3ResourceResolver(resolver, amazonS3, s3BucketProvider, environment);
             } catch (NoSuchBeanDefinitionException e) {
                 throw new InvalidConfigurationMissingBean("No S3 bucket name provider in context", S3BucketProvider.class, e);
             }
@@ -132,7 +145,7 @@ public class S3ContentServiceConfiguration {
                     return StringUtils.EMPTY;
                 }
             };
-            return new S3ResourceResolver(resolver, amazonS3, provider);
+            return new S3ResourceResolver(resolver, amazonS3, provider, environment);
         }
     }
 

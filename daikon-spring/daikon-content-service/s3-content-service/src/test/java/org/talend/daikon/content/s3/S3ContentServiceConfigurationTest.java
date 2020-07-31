@@ -1,6 +1,7 @@
 package org.talend.daikon.content.s3;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -37,14 +38,16 @@ public class S3ContentServiceConfigurationTest {
 
         when(environment.getProperty(eq("content-service.store.s3.authentication"), anyString())).thenReturn("MINIO");
         when(environment.containsProperty(eq(S3ContentServiceConfiguration.S3_ENDPOINT_URL))).thenReturn(true);
-        when(environment.getProperty(eq(S3ContentServiceConfiguration.S3_ENDPOINT_URL))).thenReturn("http://fake.io");
+        when(environment.getProperty(eq(S3ContentServiceConfiguration.S3_ENDPOINT_URL))).thenReturn("http://fake.io:9001");
+        when(environment.getProperty(eq(S3ContentServiceConfiguration.S3_ENABLE_PATH_STYLE), eq(Boolean.class), any()))
+                .thenReturn(true);
 
         // when
         final AmazonS3 amazonS3 = configuration.amazonS3(environment, context);
 
         // then
         final String fileUrl = amazonS3.getUrl("mybucket", "file.csv").toString();
-        assertEquals("http://mybucket.fake.io/file.csv", fileUrl);
+        assertEquals("http://fake.io:9001/mybucket/file.csv", fileUrl);
     }
 
     @Test
@@ -56,6 +59,8 @@ public class S3ContentServiceConfigurationTest {
         when(environment.getProperty(eq("content-service.store.s3.authentication"), anyString())).thenReturn("TOKEN");
         when(environment.getProperty("content-service.store.s3.secretKey")).thenReturn("verySecret");
         when(environment.getProperty("content-service.store.s3.accessKey")).thenReturn("anAccessKey");
+        when(environment.getProperty(eq(S3ContentServiceConfiguration.S3_ENABLE_PATH_STYLE), eq(Boolean.class), any()))
+                .thenReturn(false);
 
         // when
         configuration.amazonS3(environment, context);
