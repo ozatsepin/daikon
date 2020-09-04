@@ -122,7 +122,18 @@
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
-        </repository>
+    </repository>
+    <repository>
+               <id>TalendThirdPartyReleases</id>
+               <name>talend-enterprise-release</name>
+	       <url>https://artifacts-zl.talend.com/nexus/content/repositories/thirdparty-releases/</url>
+               <releases>
+                    <enabled>true</enabled>
+               </releases>
+               <snapshots>
+                   <enabled>false</enabled>
+               </snapshots>
+    </repository>
     </repositories>
     <pluginRepositories>
         <pluginRepository>
@@ -156,7 +167,7 @@
         <repository>
             <id>talend_nexus_deployment</id>
             <url>${talend_releases}</url>
-        </repository>
+    </repository>
     </distributionManagement>
     <dependencyManagement>
         <dependencies>
