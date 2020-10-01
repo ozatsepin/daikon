@@ -236,9 +236,9 @@ public class AuditLogContextBuilder {
         try {
             if (!StringUtils.isEmpty(httpServletRequest.getHeader("X-Forwarded-Host"))) {
                 url = UriComponentsBuilder.fromPath(httpServletRequest.getRequestURI())
-                        .scheme(Optional.ofNullable(httpServletRequest.getHeader("X-Forwarded-Proto"))
-                                .filter(it -> it.matches("http|https")).orElse("https"))
-                        .host(retrieveHost(httpServletRequest)).query(httpServletRequest.getQueryString()).build().toUri().toString();
+                    .scheme(Optional.ofNullable(httpServletRequest.getHeader("X-Forwarded-Proto"))
+                            .filter(it -> it.matches("http|https")).orElse("https"))
+                    .host(retrieveHost(httpServletRequest)).query(httpServletRequest.getQueryString()).build().toUri().toString();
             }
         } catch (IllegalStateException e) {
             LOGGER.warn("Can't compute request URL ", e);
