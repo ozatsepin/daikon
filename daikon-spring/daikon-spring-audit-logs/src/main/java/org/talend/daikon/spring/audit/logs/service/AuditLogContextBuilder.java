@@ -6,6 +6,8 @@ import java.util.*;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.talend.daikon.exception.ExceptionContext;
@@ -19,6 +21,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class AuditLogContextBuilder {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AuditLogContextBuilder.class);
 
     private final Map<String, String> context = new LinkedHashMap<>();
 
@@ -228,13 +232,21 @@ public class AuditLogContextBuilder {
     }
 
     private String computeRequestUrl(HttpServletRequest httpServletRequest) {
-        if (!StringUtils.isEmpty(httpServletRequest.getHeader("X-Forwarded-Host"))) {
-            return UriComponentsBuilder.fromPath(httpServletRequest.getRequestURI())
-                    .scheme(Optional.ofNullable(httpServletRequest.getHeader("X-Forwarded-Proto")).orElse("https"))
-                    .host(retrieveHost(httpServletRequest)).query(httpServletRequest.getQueryString()).build().toUri().toString();
-        } else {
-            return httpServletRequest.getRequestURL().toString();
+        String url = null;
+        try {
+            if (!StringUtils.isEmpty(httpServletRequest.getHeader("X-Forwarded-Host"))) {
+                url = UriComponentsBuilder.fromPath(httpServletRequest.getRequestURI())
+                        .scheme(Optional.ofNullable(httpServletRequest.getHeader("X-Forwarded-Proto"))
+                                .filter(it -> it.matches("http|https")).orElse("https"))
+                        .host(retrieveHost(httpServletRequest)).query(httpServletRequest.getQueryString()).build().toUri().toString();
+            }
+        } catch (IllegalStateException e) {
+            LOGGER.warn("Can't compute request URL ", e);
         }
+        if (url == null) {
+            url = httpServletRequest.getRequestURL().toString();
+        }
+        return url;
     }
 
     private String retrieveHost(HttpServletRequest httpServletRequest) {
