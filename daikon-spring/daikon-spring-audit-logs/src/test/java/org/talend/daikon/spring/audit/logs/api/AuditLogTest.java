@@ -61,6 +61,8 @@ public class AuditLogTest {
 
     private static final String X_FORWARDED_HOST = "X-Forwarded-Host";
 
+    private static final String X_FORWARDED_PROTO = "X-Forwarded-Proto";
+
     private static final String MY_IP = "35.74.154.242";
 
     private static final String MY_IP_WITH_INVALID_IP = "35.74.154.242, ImAWrongIp";
@@ -220,6 +222,25 @@ public class AuditLogTest {
         mockMvc.perform(MockMvcRequestBuilders.get(AuditLogTestApp.GET_200_WITH_BODY).header(REMOTE_IP_HEADER, MY_IP)
                 // simulate the application is running behind the LB that adds port to X-Forwarded-Host header
                 .header(X_FORWARDED_HOST, "iam.qa.cloud.talend.com:443")).andExpect(status().isOk());
+
+        verifyContext(basicContextCheck());
+        verifyContext(httpRequestContextCheckWithLBHost(AuditLogTestApp.GET_200_WITH_BODY, HttpMethod.GET, null));
+        verifyContext(httpResponseContextCheck(HttpStatus.OK, AuditLogTestApp.BODY_RESPONSE));
+    }
+
+    /**
+     * please refer
+     * https://github.com/spring-cloud/spring-cloud-netflix/commit/a38b7b71ac8be9608ac2530dac41cd6298d696cf
+     */
+    @Test
+    @WithUserDetails
+    public void testGet200BodyWithXForwardedHeadersDoubledByZuul() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get(AuditLogTestApp.GET_200_WITH_BODY)
+                .header(REMOTE_IP_HEADER, MY_IP)
+                // simulate the application is running behind the LB that adds port to X-Forwarded-Host header
+                .header(X_FORWARDED_HOST, "iam.qa.cloud.talend.com,localhost:8080:443,8080")
+                .header(X_FORWARDED_PROTO, "https,http")
+        ).andExpect(status().isOk());
 
         verifyContext(basicContextCheck());
         verifyContext(httpRequestContextCheckWithLBHost(AuditLogTestApp.GET_200_WITH_BODY, HttpMethod.GET, null));

@@ -234,16 +234,31 @@ public class AuditLogContextBuilder {
     private String computeRequestUrl(HttpServletRequest httpServletRequest) {
         if (!StringUtils.isEmpty(httpServletRequest.getHeader("X-Forwarded-Host"))) {
             return UriComponentsBuilder.fromPath(httpServletRequest.getRequestURI())
-                    .scheme(Optional.ofNullable(httpServletRequest.getHeader("X-Forwarded-Proto"))
-                            .filter(it -> it.matches("http|https")).orElse("https"))
+                    .scheme(retrieveScheme(httpServletRequest))
                     .host(retrieveHost(httpServletRequest)).query(httpServletRequest.getQueryString()).build().toUri().toString();
         } else {
             return httpServletRequest.getRequestURL().toString();
         }
     }
 
+    /**
+     * Zuul can append to X-Forwarded-* headers instead of replacing them
+     * https://github.com/spring-cloud/spring-cloud-netflix/commit/a38b7b71ac8be9608ac2530dac41cd6298d696cf
+     */
+    private String retrieveScheme(HttpServletRequest httpServletRequest) {
+        return Optional.ofNullable(httpServletRequest.getHeader("X-Forwarded-Proto"))
+                .filter(it -> it.matches("http|https")).orElse("https");
+    }
+
+    /**
+     * Zuul can append to X-Forwarded-* headers instead of replacing them
+     * https://github.com/spring-cloud/spring-cloud-netflix/commit/a38b7b71ac8be9608ac2530dac41cd6298d696cf
+     */
     private String retrieveHost(HttpServletRequest httpServletRequest) {
         String hostWithPort = httpServletRequest.getHeader("X-Forwarded-Host");
+        if (hostWithPort.contains(",")) {
+            hostWithPort = hostWithPort.split(",")[0];
+        }
         return hostWithPort.split(":")[0];
     }
 
